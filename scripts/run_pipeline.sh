@@ -14,15 +14,34 @@ echo 'mkdir -p out/fastqc'
 echo 'fastqc -o out/fastqc data/${sampleid}_?.fastq.gz'
 
 echo "Running cutadapt..."
-mkdir -p log/cutadapt
-mkdir -p out/cutadapt
-cutadapt \
+echo 'mkdir -p log/cutadapt'
+echo 'mkdir -p out/cutadapt'
+echo 'cutadapt \
     -m 20 \
     -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCA \
     -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT \
     -o out/cutadapt/${sampleid}_1.trimmed.fastq.gz \
     -p out/cutadapt/${sampleid}_2.trimmed.fastq.gz data/${sampleid}_1.fastq.gz data/${sampleid}_2.fastq.gz \
-    > log/cutadapt/${sampleid}.log
+     log/cutadapt/${sampleid}.log'
+
+
+echo "Running STAR index..."
+mkdir -p res/genome/star_index
+STAR \
+    --runThreadN 8 \
+    --runMode genomeGenerate \
+    --genomeDir res/genome/star_index/ \
+    --genomeFastaFiles res/genome/ecoli.fast \
+    --genomeSAindexNbases 9
+
+echo "Running STAR alignment..."
+mkdir -p out/star/${sampleid}
+STAR \
+    --runThreadN 4 \
+    --genomeDir res/genome/star_index/ \
+    --readFilesIn out/cutadapt/${sampleid}_1.trimmed.fastq.gz out/cutadapt/${sampleid}_2.trimmed.fastq.gz \
+    --readFilesCommand zcat \
+    --outFileNamePrefix out/star/${sampleid}/
 
 done
 # place here any commands that need to run after analysing the samples
